@@ -134,6 +134,25 @@ const LEVEL_11 = [
   [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
   [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
 ];
+const LEVEL_12 = [
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1],
+  [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+  [1, 4, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+];
+const LEVEL_13 = [
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1],
+  [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+  [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+  [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+  [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+  [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+  [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
+  [1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+];
 const MAPS = [
   LEVEL_01,
   LEVEL_02,
@@ -145,7 +164,9 @@ const MAPS = [
   LEVEL_08,
   LEVEL_09,
   LEVEL_10,
-  LEVEL_11
+  LEVEL_11,
+  LEVEL_12,
+  LEVEL_13
 ];
 const DEFAULT_STYLING = {
   rotate: "0deg",
@@ -162,6 +183,8 @@ const MAP_STYLING = [
   {rotate: "2deg"},
   {fiter: "blur(1px)"},
   {},
+  {},
+  {rotate: "180deg"},
   {}
 ];
 let mapIndex = 0;
@@ -182,7 +205,7 @@ function generateMap(map) {
   }
   const label = document.getElementById("level");
   if (label) {
-    label.innerHTML = `LEVEL_${mapIndex}`;
+    label.innerHTML = `LEVEL_${mapIndex + 1}`;
   }
   for (let y = 0; y < map.length; y++) {
     for (let x = 0; x < map[y].length; x++) {
@@ -198,6 +221,9 @@ function generateMap(map) {
           break;
         case 4:
           new RespawnTile(x, y);
+          break;
+        case 5:
+          new BounceTile(x, y);
           break;
       }
     }
@@ -314,6 +340,12 @@ const _RespawnTile = class extends Tile {
 let RespawnTile = _RespawnTile;
 RespawnTile.size = 8;
 RespawnTile.instances = [];
+class BounceTile extends Tile {
+  constructor(x, y) {
+    super({tileX: x, tileY: y, color: "#44cc44"});
+    this.type = "bounce";
+  }
+}
 generateMap(MAPS[mapIndex]);
 drawAllTiles();
 class Input {
@@ -370,6 +402,7 @@ class Player {
   update(progress) {
     this.playerMovement(progress);
     this.lavaLogic(progress);
+    this.bounceLogic(progress);
     this.goalLogic();
     this.physicsUpdate(progress);
     this.mapTileCollision(progress);
@@ -407,6 +440,12 @@ class Player {
       return;
     if (Tile.isWithinType(this.x, this.y, PLAYER_SIZE, "lava"))
       this.die(progress);
+  }
+  bounceLogic(progress) {
+    if (Tile.isWithinType(this.x, this.y, PLAYER_SIZE, "bounce")) {
+      this.yV *= -1;
+      this.y -= 1;
+    }
   }
   goalLogic() {
     if (Tile.isWithinType(this.x, this.y, PLAYER_SIZE, "finish")) {
