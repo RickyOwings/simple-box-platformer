@@ -147,6 +147,23 @@ const MAPS = [
   LEVEL_10,
   LEVEL_11
 ];
+const DEFAULT_STYLING = {
+  rotate: "0deg",
+  filter: "unset"
+};
+const MAP_STYLING = [
+  {},
+  {rotate: "2deg"},
+  {rotate: "-2deg"},
+  {},
+  {rotate: "5deg"},
+  {rotate: "1deg"},
+  {rotate: "90deg"},
+  {rotate: "2deg"},
+  {fiter: "blur(1px)"},
+  {},
+  {}
+];
 let mapIndex = 0;
 function generateMap(map) {
   let height = map.length * 16;
@@ -157,6 +174,12 @@ function generateMap(map) {
   let hScale = window.innerHeight / canvas.height;
   let scale = wScale < hScale ? wScale : hScale;
   canvas.style.scale = `${scale * 0.9}`;
+  for (let key in DEFAULT_STYLING) {
+    canvas.style[key] = DEFAULT_STYLING[key];
+  }
+  for (let key in MAP_STYLING[mapIndex]) {
+    canvas.style[key] = MAP_STYLING[mapIndex][key];
+  }
   const label = document.getElementById("level");
   if (label) {
     label.innerHTML = `LEVEL_${mapIndex}`;
@@ -549,14 +572,15 @@ function draw() {
   drawAllTiles();
   player.draw();
 }
+const FRAME_DELAY = 1e3 / 144;
 var lastRender = 0;
 async function loop(time) {
   let timestamp = await waitPageResume(time);
-  const progress = timestamp - lastRender;
+  const progress = FRAME_DELAY;
   lastRender = timestamp;
   update(progress);
   draw();
-  window.requestAnimationFrame(loop);
+  setTimeout(loop, FRAME_DELAY);
 }
 setTimeout(() => {
   window.requestAnimationFrame((time) => {
