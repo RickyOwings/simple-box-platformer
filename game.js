@@ -181,7 +181,7 @@ const MAP_STYLING = [
   {rotate: "1deg"},
   {rotate: "90deg"},
   {rotate: "2deg"},
-  {fiter: "blur(1px)"},
+  {filter: "sepia(0.5)"},
   {},
   {},
   {rotate: "180deg"},
@@ -237,8 +237,9 @@ function removeMap() {
 }
 function nextMap() {
   if (mapIndex + 1 >= MAPS.length)
-    return;
-  mapIndex++;
+    mapIndex = 0;
+  else
+    mapIndex++;
   removeMap();
   generateMap(MAPS[mapIndex]);
 }
@@ -395,6 +396,7 @@ class Player {
     this.y = y;
     this.input = new Input("w", "a", "s", "d");
     this.color = PLAYER_COLOR;
+    this.size = PLAYER_SIZE;
   }
   static fromTilePosition(tileX, tileY) {
     return new Player(Math.floor(tileX * TILE_SIZE) + TILE_SIZE / 2 - PLAYER_SIZE / 2, Math.floor(tileY * TILE_SIZE) + TILE_SIZE / 2 - PLAYER_SIZE / 2);
@@ -438,17 +440,17 @@ class Player {
   lavaLogic(progress) {
     if (this.dead)
       return;
-    if (Tile.isWithinType(this.x, this.y, PLAYER_SIZE, "lava"))
+    if (Tile.isWithinType(this.x, this.y, this.size, "lava"))
       this.die(progress);
   }
   bounceLogic(progress) {
-    if (Tile.isWithinType(this.x, this.y, PLAYER_SIZE, "bounce")) {
+    if (Tile.isWithinType(this.x, this.y, this.size, "bounce")) {
       this.yV *= -1;
       this.y -= 1;
     }
   }
   goalLogic() {
-    if (Tile.isWithinType(this.x, this.y, PLAYER_SIZE, "finish")) {
+    if (Tile.isWithinType(this.x, this.y, this.size, "finish")) {
       nextMap();
       let respawn = RespawnTile.getRespawn();
       if (respawn == null)
@@ -478,16 +480,16 @@ class Player {
     }, progress * 100);
   }
   mapTileCollision(progress) {
-    const botLeft = Tile.isIntersecting(this.x, this.y + PLAYER_SIZE);
-    const botRight = Tile.isIntersecting(this.x + PLAYER_SIZE, this.y + PLAYER_SIZE);
+    const botLeft = Tile.isIntersecting(this.x, this.y + this.size);
+    const botRight = Tile.isIntersecting(this.x + this.size, this.y + this.size);
     const topLeft = Tile.isIntersecting(this.x, this.y);
-    const topRight = Tile.isIntersecting(this.x + PLAYER_SIZE, this.y);
+    const topRight = Tile.isIntersecting(this.x + this.size, this.y);
     const top = topLeft && topRight;
     const bot = botLeft && botRight;
     const left = botLeft && topLeft;
     const right = botRight && topRight;
-    const botTarget = Math.floor((this.y + PLAYER_SIZE) / TILE_SIZE) * TILE_SIZE - PLAYER_SIZE;
-    const rightTarget = Math.floor((this.x + PLAYER_SIZE) / TILE_SIZE) * TILE_SIZE - PLAYER_SIZE;
+    const botTarget = Math.floor((this.y + this.size) / TILE_SIZE) * TILE_SIZE - this.size;
+    const rightTarget = Math.floor((this.x + this.size) / TILE_SIZE) * TILE_SIZE - this.size;
     const topTarget = Math.ceil(this.y / TILE_SIZE) * TILE_SIZE;
     const leftTarget = Math.ceil(this.x / TILE_SIZE) * TILE_SIZE;
     if (bot) {
@@ -515,8 +517,8 @@ class Player {
     if (left || right || top || bot)
       return;
     if (botRight) {
-      let dx = this.x + PLAYER_SIZE - leftTarget;
-      let dy = this.y + PLAYER_SIZE - topTarget;
+      let dx = this.x + this.size - leftTarget;
+      let dy = this.y + this.size - topTarget;
       if (dx < dy) {
         this.xV = 0;
         this.x = rightTarget;
@@ -530,7 +532,7 @@ class Player {
     }
     if (botLeft) {
       let dx = leftTarget - this.x;
-      let dy = this.y + PLAYER_SIZE - topTarget;
+      let dy = this.y + this.size - topTarget;
       if (dx < dy) {
         this.xV = 0;
         this.x = leftTarget;
@@ -543,7 +545,7 @@ class Player {
       return;
     }
     if (topRight) {
-      let dx = this.x + PLAYER_SIZE - leftTarget;
+      let dx = this.x + this.size - leftTarget;
       let dy = topTarget - this.y;
       if (dx < dy) {
         this.xV = 0;
@@ -573,7 +575,7 @@ class Player {
     ctx.fillStyle = this.color;
     let x = Math.floor(this.x);
     let y = Math.floor(this.y);
-    ctx.fillRect(x, y, PLAYER_SIZE, PLAYER_SIZE);
+    ctx.fillRect(x, y, this.size, this.size);
   }
 }
 var player;

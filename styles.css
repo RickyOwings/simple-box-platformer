@@ -42,5 +42,5 @@ body {
 canvas {
     image-rendering: pixelated;
     aspect-ratio: initial;
-    transition: scale 0.2s, rotate 0.2s;
+    transition: scale 0.2s, rotate 0.2s, filter 1s;
 }
