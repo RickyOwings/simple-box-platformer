@@ -9,6 +9,12 @@ const PLAYER_COLOR = "#00ff00";
 export default class Player {
   constructor(x, y, canvas) {
     this.dead = false;
+    this.xMusicVol = 0.1;
+    this.yMusicVol = 0.1;
+    this.drumMusicVol = 0.5;
+    this.dieSoundVol = 0.4;
+    this.finishLevelVol = 0.4;
+    this.jumpSoundVol = 0.4;
     this.xV = 0;
     this.yV = 0;
     this.xA = 0;
@@ -17,12 +23,25 @@ export default class Player {
     this.bounce = 8e3;
     this.jumpVel = 200;
     this.wallFactor = 0;
+    this.volumeStore = 1;
     this.x = x;
     this.y = y;
     this.canvas = canvas;
     this.input = new Input("w", "a", "s", "d");
     this.color = PLAYER_COLOR;
     this.size = PLAYER_SIZE;
+    this.xMusic = new Audio("./assets/music/1.mp3");
+    this.yMusic = new Audio("./assets/music/2.mp3");
+    this.drumMusic = new Audio("./assets/music/3.mp3");
+    this.dieSound = new Audio("./assets/sfx/Die.mp3");
+    this.finishLevel = new Audio("./assets/sfx/Finish Level.mp3");
+    this.jumpSound = new Audio("./assets/sfx/Jump.mp3");
+    this.xMusic.play();
+    this.xMusic.loop = true;
+    this.yMusic.play();
+    this.yMusic.loop = true;
+    this.drumMusic.play();
+    this.drumMusic.loop = true;
   }
   static fromTilePosition(tileX, tileY, canvas) {
     return new Player(Math.floor(tileX * Tile.size) + Tile.size / 2 - PLAYER_SIZE / 2, Math.floor(tileY * Tile.size) + Tile.size / 2 - PLAYER_SIZE / 2, canvas);
@@ -34,6 +53,7 @@ export default class Player {
     this.goalLogic();
     this.physicsUpdate(progress);
     this.mapTileCollision(progress);
+    this.adaptiveMusicVolume();
   }
   physicsUpdate(progress) {
     let progSec = progress / 1e3;
@@ -61,6 +81,9 @@ export default class Player {
       this.yV = -this.jumpVel * mult;
       this.xA = this.wallFactor;
       this.canJump = false;
+      this.jumpSound.pause();
+      this.jumpSound.currentTime = 0;
+      this.jumpSound.play();
     }
   }
   lavaLogic(progress) {
@@ -77,6 +100,7 @@ export default class Player {
   }
   goalLogic() {
     if (Tile.isWithinType(this.x, this.y, this.size, "finish")) {
+      this.finishLevel.play();
       Level.next(this.canvas);
       let respawn = RespawnTile.getRespawn();
       if (respawn == null)
@@ -88,9 +112,45 @@ export default class Player {
     }
     ;
   }
+  adaptiveMusicVolume() {
+    const yMusicTarget = capNumberToOne(Math.log10(Math.abs(this.yV / 15))) * 0.5;
+    const dy = this.yMusicVol - yMusicTarget;
+    const xMusicTarget = capNumberToOne(Math.log10(Math.abs(this.xV / 25)));
+    const dx = this.xMusicVol - xMusicTarget;
+    const accel = 5e-3;
+    this.xMusicVol = capNumberToOne(this.xMusicVol - accel * dx);
+    this.yMusicVol = capNumberToOne(this.yMusicVol - accel * dy);
+    this.drumMusic.volume = this.drumMusicVol * this.volumeStore;
+    this.xMusic.volume = this.xMusicVol * this.volumeStore;
+    this.yMusic.volume = this.yMusicVol * this.volumeStore;
+    this.finishLevel.volume = this.finishLevelVol * this.volumeStore;
+    this.dieSound.volume = this.dieSoundVol * this.volumeStore;
+    this.jumpSound.volume = this.jumpSoundVol * this.volumeStore;
+    if (this.dead) {
+      this.yMusic.volume = 0;
+      this.xMusic.volume = 0;
+      this.drumMusic.volume = 0;
+    }
+    const volHTML = document.getElementById("volume");
+    if (volHTML) {
+      let volume = parseFloat(volHTML.value);
+      volume = capNumberToOne(volume);
+      console.log(volume);
+      this.volumeStore = volume;
+    }
+  }
+  restartMusic() {
+    this.yMusic.currentTime = 0;
+    this.xMusic.currentTime = 0;
+    this.drumMusic.currentTime = 0;
+  }
   die(progress) {
+    const scale = parseFloat(this.canvas.style.scale);
+    this.canvas.style.scale = `${scale * 0.9}`;
+    const canvasScaleStyle = this.canvas.style.scale;
     this.dead = true;
     this.color = "#333333";
+    this.dieSound.play();
     setTimeout(() => {
       this.dead = false;
       this.color = PLAYER_COLOR;
@@ -103,6 +163,10 @@ export default class Player {
       this.xV = 0;
       this.x = spawn.getX();
       this.y = 4 + spawn.getY();
+      this.restartMusic();
+      if (this.canvas.style.scale != canvasScaleStyle)
+        return;
+      this.canvas.style.scale = `${scale}`;
     }, progress * 100);
   }
   mapTileCollision(progress) {
@@ -201,4 +265,13 @@ export default class Player {
     let y = Math.floor(this.y);
     ctx.fillRect(x, y, this.size, this.size);
   }
+}
+function capNumberToOne(num) {
+  if (!isFinite(num))
+    return 0;
+  if (num >= 1)
+    return 1;
+  if (num <= 0)
+    return 0;
+  return num;
 }

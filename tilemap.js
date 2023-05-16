@@ -1,77 +1,3 @@
-const _Level = class {
-  static next(canvas) {
-    if (_Level.index + 1 >= _Level.maps.length)
-      _Level.index = 0;
-    else
-      _Level.index++;
-    _Level.remove();
-    _Level.generate(canvas);
-  }
-  static generate(canvas) {
-    if (!_Level.maps.length)
-      return;
-    const level = _Level.maps[_Level.index];
-    const map = level.mapArr;
-    const style = level.style;
-    let height = map.length * 16;
-    let width = map[0].length * 16;
-    canvas.width = width;
-    canvas.height = height;
-    let wScale = window.innerWidth / canvas.width;
-    let hScale = window.innerHeight / canvas.height;
-    let scale = wScale < hScale ? wScale : hScale;
-    canvas.style.scale = `${scale * 0.9}`;
-    for (let key in _Level.cssDefault) {
-      canvas.style[key] = _Level.cssDefault[key];
-    }
-    for (let key in style) {
-      canvas.style[key] = style[key];
-    }
-    const label = document.getElementById("level");
-    if (label) {
-      label.innerHTML = `LEVEL_${_Level.index + 1}`;
-    }
-    for (let y = 0; y < map.length; y++) {
-      for (let x = 0; x < map[y].length; x++) {
-        switch (map[y][x]) {
-          case 1:
-            new BasicTile(x, y);
-            break;
-          case 2:
-            new FinishTile(x, y);
-            break;
-          case 3:
-            new LavaTile(x, y);
-            break;
-          case 4:
-            new RespawnTile(x, y);
-            break;
-          case 5:
-            new BounceTile(x, y);
-            break;
-        }
-      }
-    }
-  }
-  static remove() {
-    for (let i in Tile.instances) {
-      Tile.instances[i].remove();
-    }
-    Tile.instances = [];
-  }
-  constructor({mapArr, style = {}}) {
-    this.mapArr = mapArr;
-    this.style = style;
-    _Level.maps.push(this);
-  }
-};
-let Level = _Level;
-Level.cssDefault = {
-  rotate: "0deg",
-  filter: "unset"
-};
-Level.maps = [];
-Level.index = 0;
 const _Tile = class {
   constructor({tileX, tileY, color = "#aaaaaa"}) {
     this.type = "basic";
@@ -118,27 +44,33 @@ const _Tile = class {
 let Tile = _Tile;
 Tile.instances = [];
 Tile.size = 16;
-class BasicTile extends Tile {
+const _BasicTile = class extends Tile {
   constructor(x, y) {
-    super({tileX: x, tileY: y, color: "#aaaaaa"});
+    super({tileX: x, tileY: y, color: _BasicTile.color});
     this.type = "basic";
   }
-}
-class FinishTile extends Tile {
+};
+let BasicTile = _BasicTile;
+BasicTile.color = "#aaaaaa";
+const _FinishTile = class extends Tile {
   constructor(x, y) {
-    super({tileX: x, tileY: y, color: "#ffff00"});
+    super({tileX: x, tileY: y, color: _FinishTile.color});
     this.type = "finish";
   }
-}
-class LavaTile extends Tile {
+};
+let FinishTile = _FinishTile;
+FinishTile.color = "#ffff00";
+const _LavaTile = class extends Tile {
   constructor(x, y) {
-    super({tileX: x, tileY: y, color: "#ff0000"});
+    super({tileX: x, tileY: y, color: _LavaTile.color});
     this.type = "lava";
   }
-}
+};
+let LavaTile = _LavaTile;
+LavaTile.color = "#ff0000";
 const _RespawnTile = class extends Tile {
   constructor(x, y) {
-    super({tileX: x, tileY: y, color: "#0000AA"});
+    super({tileX: x, tileY: y, color: _RespawnTile.color});
     this.type = "respawn";
     _RespawnTile.spawns.push(this);
   }
@@ -167,12 +99,86 @@ const _RespawnTile = class extends Tile {
 let RespawnTile = _RespawnTile;
 RespawnTile.size = 8;
 RespawnTile.spawns = [];
-class BounceTile extends Tile {
+RespawnTile.color = "#0000aa";
+const _BounceTile = class extends Tile {
   constructor(x, y) {
-    super({tileX: x, tileY: y, color: "#44cc44"});
+    super({tileX: x, tileY: y, color: _BounceTile.color});
     this.type = "bounce";
   }
-}
+};
+let BounceTile = _BounceTile;
+BounceTile.color = "#44cc44";
+const _Level = class {
+  static next(canvas) {
+    if (_Level.index + 1 >= _Level.maps.length)
+      _Level.index = 0;
+    else
+      _Level.index++;
+    _Level.remove();
+    _Level.generate(canvas);
+  }
+  static generate(canvas) {
+    if (!_Level.maps.length)
+      return;
+    const level = _Level.maps[_Level.index];
+    const map = level.mapArr;
+    const style = level.style;
+    let height = map.length * 16;
+    let width = map[0].length * 16;
+    canvas.width = width;
+    canvas.height = height;
+    let wScale = window.innerWidth / canvas.width;
+    let hScale = window.innerHeight / canvas.height;
+    let scale = wScale < hScale ? wScale : hScale;
+    canvas.style.scale = `${scale * 0.9}`;
+    for (let key in _Level.cssDefault) {
+      canvas.style[key] = _Level.cssDefault[key];
+    }
+    for (let key in style) {
+      canvas.style[key] = style[key];
+    }
+    const label = document.getElementById("level");
+    if (label) {
+      label.innerHTML = `LEVEL_${_Level.index + 1}`;
+    }
+    for (let y = 0; y < map.length; y++) {
+      for (let x = 0; x < map[y].length; x++) {
+        if (Object.keys(_Level.tileDict).includes(`${map[y][x]}`)) {
+          const Something = _Level.tileDict[`${map[y][x]}`];
+          if (Something) {
+            new Something(x, y);
+          }
+        }
+      }
+    }
+  }
+  static remove() {
+    for (let i in Tile.instances) {
+      Tile.instances[i].remove();
+    }
+    Tile.instances = [];
+  }
+  constructor({mapArr, style = {}}) {
+    this.mapArr = mapArr;
+    this.style = style;
+    _Level.maps.push(this);
+  }
+};
+let Level = _Level;
+Level.cssDefault = {
+  rotate: "0deg",
+  filter: "unset"
+};
+Level.maps = [];
+Level.index = 0;
+Level.tileDict = {
+  0: void 0,
+  1: BasicTile,
+  2: FinishTile,
+  3: LavaTile,
+  4: RespawnTile,
+  5: BounceTile
+};
 export {
   Level,
   Tile,

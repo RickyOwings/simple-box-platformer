@@ -39,6 +39,68 @@ body {
     color: white;
 }
 
+#builderLink {
+    z-index: 255;
+    text-align: center;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    color: white;
+}
+
+#builderItems {
+    z-index: 255;
+    text-align: center;
+    position: absolute;
+    bottom: auto;
+    top: auto;
+    left: 0;
+    color: white;
+    padding: 16px;
+}
+
+#outputDiv {
+    z-index: 255;
+    background-color: #ffffff11;
+    font-size: 8px;
+    width: 450px;
+    text-align: left;
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: white;
+}
+
+.buildItemContainer {
+    display: flex;
+    justify-content: right;
+    padding: 1px;
+    background-color: #ffffff11;
+}
+
+.buildItemContainer input {
+    width: 40px;
+}
+
+.buildItemLabel {
+    font-size: 12px;
+    margin: 4px;
+}
+
+.tileSelection {
+    width: 32px;
+    height: 32px;
+    border: solid 1px white;
+}
+
+.tileSelection:hover {
+    scale: 0.9;
+}
+
+.tileSelection:active {
+    scale: 1.1;
+}
+
 canvas {
     image-rendering: pixelated;
     aspect-ratio: initial;

@@ -1,12 +1,19 @@
 <!DOCTYPE html>
-<head>
-    <link rel="stylesheet" href="styles.css" media="all">
-</head>
-<body>
-    <div id="title">
-        SOME PLATFORMER GAME
-    </div>
-    <div id="level"></div>
-    <div id="controls">WASD to Move</div>
-    <script type="module" src="game.js"></script>
-</body>
+<html>
+    <head>
+        <link rel="stylesheet" href="styles.css" media="all">
+    </head>
+    <body>
+        <div id="title">
+            SOME PLATFORMER GAME
+        </div>
+        <div id="level"></div>
+        <div id="controls">WASD to Move</div>
+        <div id="builderLink"><a href="builder.html">Builder</a></div>
+        <div id="outputDiv">
+            Volume
+            <input id="volume" type="range" min='0' max='1' step='0.01' value="0.1">
+        </div>
+        <script type="module" src="game.js"></script>
+    </body>
+</html>
