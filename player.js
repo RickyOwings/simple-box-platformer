@@ -15,6 +15,7 @@ export default class Player {
     this.dieSoundVol = 0.4;
     this.finishLevelVol = 0.4;
     this.jumpSoundVol = 0.4;
+    this.bounceSoundVol = 0.4;
     this.xV = 0;
     this.yV = 0;
     this.xA = 0;
@@ -36,6 +37,7 @@ export default class Player {
     this.dieSound = new Audio("./assets/sfx/Die.mp3");
     this.finishLevel = new Audio("./assets/sfx/Finish Level.mp3");
     this.jumpSound = new Audio("./assets/sfx/Jump.mp3");
+    this.bounceSound = new Audio("./assets/sfx/bounce.mp3");
     this.xMusic.play();
     this.xMusic.loop = true;
     this.yMusic.play();
@@ -96,6 +98,9 @@ export default class Player {
     if (Tile.isWithinType(this.x, this.y, this.size, "bounce")) {
       this.yV *= -1;
       this.y -= 1;
+      this.bounceSound.pause();
+      this.bounceSound.currentTime = 0;
+      this.bounceSound.play();
     }
   }
   goalLogic() {
@@ -126,6 +131,7 @@ export default class Player {
     this.finishLevel.volume = this.finishLevelVol * this.volumeStore;
     this.dieSound.volume = this.dieSoundVol * this.volumeStore;
     this.jumpSound.volume = this.jumpSoundVol * this.volumeStore;
+    this.bounceSound.volume = this.bounceSoundVol * this.volumeStore;
     if (this.dead) {
       this.yMusic.volume = 0;
       this.xMusic.volume = 0;
