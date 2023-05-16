@@ -13,6 +13,7 @@ export default class Player {
     this.yMusicVol = 0.1;
     this.drumMusicVol = 0.5;
     this.dieSoundVol = 0.4;
+    this.scientistSoundVol = 0.4;
     this.finishLevelVol = 0.4;
     this.jumpSoundVol = 0.4;
     this.bounceSoundVol = 0.4;
@@ -35,6 +36,7 @@ export default class Player {
     this.yMusic = new Audio("./assets/music/2.mp3");
     this.drumMusic = new Audio("./assets/music/3.mp3");
     this.dieSound = new Audio("./assets/sfx/Die.mp3");
+    this.scientistSound = new Audio("./assets/sfx/scientist_death.mp3");
     this.finishLevel = new Audio("./assets/sfx/Finish Level.mp3");
     this.jumpSound = new Audio("./assets/sfx/Jump.mp3");
     this.bounceSound = new Audio("./assets/sfx/bounce.mp3");
@@ -130,6 +132,7 @@ export default class Player {
     this.yMusic.volume = this.yMusicVol * this.volumeStore;
     this.finishLevel.volume = this.finishLevelVol * this.volumeStore;
     this.dieSound.volume = this.dieSoundVol * this.volumeStore;
+    this.scientistSound.volume = this.scientistSoundVol * this.volumeStore;
     this.jumpSound.volume = this.jumpSoundVol * this.volumeStore;
     this.bounceSound.volume = this.bounceSoundVol * this.volumeStore;
     if (this.dead) {
@@ -156,7 +159,16 @@ export default class Player {
     const canvasScaleStyle = this.canvas.style.scale;
     this.dead = true;
     this.color = "#333333";
-    this.dieSound.play();
+    const diceRoll = Math.floor(Math.random() * 100);
+    if (diceRoll == 69) {
+      this.scientistSound.pause();
+      this.scientistSound.currentTime = 0;
+      this.scientistSound.play();
+    } else {
+      this.dieSound.pause();
+      this.dieSound.currentTime = 0;
+      this.dieSound.play();
+    }
     setTimeout(() => {
       this.dead = false;
       this.color = PLAYER_COLOR;

@@ -141,6 +141,10 @@ const _Level = class {
     if (label) {
       label.innerHTML = `LEVEL_${_Level.index + 1}`;
     }
+    const message = document.getElementById("message");
+    if (message) {
+      message.innerHTML = level.message;
+    }
     for (let y = 0; y < map.length; y++) {
       for (let x = 0; x < map[y].length; x++) {
         if (Object.keys(_Level.tileDict).includes(`${map[y][x]}`)) {
@@ -158,9 +162,10 @@ const _Level = class {
     }
     Tile.instances = [];
   }
-  constructor({mapArr, style = {}}) {
+  constructor({mapArr, style = {}, message = ""}) {
     this.mapArr = mapArr;
     this.style = style;
+    this.message = message;
     _Level.maps.push(this);
   }
 };

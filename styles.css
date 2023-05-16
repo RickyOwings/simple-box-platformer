@@ -22,7 +22,7 @@ body {
     color: white;
 }
 
-#controls {
+#message {
     z-index: 255;
     text-align: center;
     position: absolute;
