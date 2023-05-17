@@ -41,12 +41,14 @@ export default class Player {
     this.finishLevel = new Audio("./assets/sfx/Finish Level.mp3");
     this.jumpSound = new Audio("./assets/sfx/Jump.mp3");
     this.bounceSound = new Audio("./assets/sfx/bounce.mp3");
-    this.xMusic.play();
     this.xMusic.loop = true;
-    this.yMusic.play();
     this.yMusic.loop = true;
-    this.drumMusic.play();
     this.drumMusic.loop = true;
+    setTimeout(() => {
+      this.xMusic.play();
+      this.yMusic.play();
+      this.drumMusic.play();
+    }, 10);
     Enemy.summonEnemies();
   }
   static fromTilePosition(tileX, tileY, canvas) {
@@ -123,9 +125,11 @@ export default class Player {
         this.xMusic.setAttribute("src", `${url}1.mp3`);
         this.yMusic.setAttribute("src", `${url}2.mp3`);
         this.drumMusic.setAttribute("src", `${url}3.mp3`);
-        this.xMusic.play();
-        this.yMusic.play();
-        this.drumMusic.play();
+        setTimeout(() => {
+          this.xMusic.play();
+          this.yMusic.play();
+          this.drumMusic.play();
+        }, 10);
       });
       Enemy.summonEnemies();
       let respawn = RespawnTile.getRespawn();
