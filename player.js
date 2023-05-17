@@ -48,7 +48,7 @@ export default class Player {
       this.xMusic.play();
       this.yMusic.play();
       this.drumMusic.play();
-    }, 10);
+    }, 500);
     Enemy.summonEnemies();
   }
   static fromTilePosition(tileX, tileY, canvas) {
@@ -129,7 +129,7 @@ export default class Player {
           this.xMusic.play();
           this.yMusic.play();
           this.drumMusic.play();
-        }, 10);
+        }, 500);
       });
       Enemy.summonEnemies();
       let respawn = RespawnTile.getRespawn();
