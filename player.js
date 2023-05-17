@@ -1,7 +1,8 @@
 import {
   Level,
   Tile,
-  RespawnTile
+  RespawnTile,
+  EnemyTile
 } from "./tilemap.js";
 import Input from "./input.js";
 const PLAYER_SIZE = 8;
@@ -46,11 +47,15 @@ export default class Player {
     this.yMusic.loop = true;
     this.drumMusic.play();
     this.drumMusic.loop = true;
+    Enemy.summonEnemies();
   }
   static fromTilePosition(tileX, tileY, canvas) {
     return new Player(Math.floor(tileX * Tile.size) + Tile.size / 2 - PLAYER_SIZE / 2, Math.floor(tileY * Tile.size) + Tile.size / 2 - PLAYER_SIZE / 2, canvas);
   }
   update(progress) {
+    Enemy.updateAll(progress);
+    if (Enemy.isColliding(this.x, this.y, this.size) && !this.dead)
+      this.die(progress);
     this.playerMovement(progress);
     this.lavaLogic(progress);
     this.bounceLogic(progress);
@@ -109,6 +114,7 @@ export default class Player {
     if (Tile.isWithinType(this.x, this.y, this.size, "finish")) {
       this.finishLevel.play();
       Level.next(this.canvas);
+      Enemy.summonEnemies();
       let respawn = RespawnTile.getRespawn();
       if (respawn == null)
         return;
@@ -182,6 +188,7 @@ export default class Player {
       this.x = spawn.getX();
       this.y = 4 + spawn.getY();
       this.restartMusic();
+      Enemy.summonEnemies();
       if (this.canvas.style.scale != canvasScaleStyle)
         return;
       this.canvas.style.scale = `${scale}`;
@@ -278,6 +285,7 @@ export default class Player {
     }
   }
   draw(ctx) {
+    Enemy.drawAll(ctx);
     ctx.fillStyle = this.color;
     let x = Math.floor(this.x);
     let y = Math.floor(this.y);
@@ -293,3 +301,89 @@ function capNumberToOne(num) {
     return 0;
   return num;
 }
+const ENEMY_COLOR = "#ffaa00";
+const ENEMY_SIZE = PLAYER_SIZE;
+const _Enemy = class {
+  constructor(x, y) {
+    this.color = ENEMY_COLOR;
+    this.size = ENEMY_SIZE;
+    this.xV = -80;
+    this.yV = 40;
+    this.x = x;
+    this.y = y;
+    _Enemy.instances.push(this);
+  }
+  static isIntersecting(x, y) {
+    for (let i in _Enemy.instances) {
+      let enemy = _Enemy.instances[i];
+      if (x < enemy.x)
+        continue;
+      if (y < enemy.y)
+        continue;
+      if (x > enemy.x + enemy.size)
+        continue;
+      if (y > enemy.y + enemy.size)
+        continue;
+      return true;
+    }
+    return false;
+  }
+  static isColliding(x, y, size) {
+    if (_Enemy.isIntersecting(x, y))
+      return true;
+    if (_Enemy.isIntersecting(x + size, y))
+      return true;
+    if (_Enemy.isIntersecting(x + size, y + size))
+      return true;
+    if (_Enemy.isIntersecting(x + size, y))
+      return true;
+    return false;
+  }
+  static summonEnemies() {
+    _Enemy.removeAll();
+    for (let i in EnemyTile.spawns) {
+      const tile = EnemyTile.spawns[i];
+      new _Enemy(tile.getX(), tile.getY());
+    }
+  }
+  static drawAll(ctx) {
+    for (let i in _Enemy.instances) {
+      _Enemy.instances[i].draw(ctx);
+    }
+  }
+  static removeAll() {
+    _Enemy.instances = [];
+  }
+  static updateAll(progress) {
+    for (let i in _Enemy.instances) {
+      _Enemy.instances[i].update(progress);
+    }
+  }
+  update(progress) {
+    this.bounce(progress);
+    this.fall(progress);
+  }
+  bounce(progress) {
+    const topLeft = Tile.isIntersecting(this.x, this.y);
+    const topRight = Tile.isIntersecting(this.x + this.size, this.y);
+    if (topLeft || topRight) {
+      this.xV *= -1;
+    }
+    this.x += this.xV * (progress / 1e3);
+  }
+  fall(progress) {
+    const bottomLeft = Tile.isIntersecting(this.x, this.y + this.size);
+    const bottomRight = Tile.isIntersecting(this.x + this.size, this.y + this.size);
+    if (bottomLeft || bottomRight)
+      return;
+    this.y += this.yV * (progress / 1e3);
+  }
+  draw(ctx) {
+    ctx.fillStyle = this.color;
+    let x = Math.floor(this.x);
+    let y = Math.floor(this.y);
+    ctx.fillRect(x, y, this.size, this.size);
+  }
+};
+let Enemy = _Enemy;
+Enemy.instances = [];

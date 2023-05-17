@@ -108,6 +108,33 @@ const _BounceTile = class extends Tile {
 };
 let BounceTile = _BounceTile;
 BounceTile.color = "#44cc44";
+const _EnemyTile = class extends Tile {
+  constructor(x, y) {
+    super({tileX: x, tileY: y, color: _EnemyTile.color});
+    this.type = "enemy";
+    _EnemyTile.spawns.push(this);
+  }
+  draw(ctx) {
+    ctx.fillStyle = "#660000";
+    let offset = (Tile.size - _EnemyTile.size) / 2;
+    ctx.fillRect(this.x + offset, this.y + offset, _EnemyTile.size, _EnemyTile.size);
+  }
+  getX() {
+    let offset = (Tile.size - RespawnTile.size) / 2;
+    return this.x + offset;
+  }
+  getY() {
+    let offset = (Tile.size - RespawnTile.size) / 2;
+    return this.y + offset;
+  }
+  remove() {
+    _EnemyTile.spawns = [];
+  }
+};
+let EnemyTile = _EnemyTile;
+EnemyTile.size = 8;
+EnemyTile.spawns = [];
+EnemyTile.color = "#660000";
 const _Level = class {
   static next(canvas) {
     if (_Level.index + 1 >= _Level.maps.length)
@@ -182,7 +209,8 @@ Level.tileDict = {
   2: FinishTile,
   3: LavaTile,
   4: RespawnTile,
-  5: BounceTile
+  5: BounceTile,
+  6: EnemyTile
 };
 export {
   Level,
@@ -191,5 +219,6 @@ export {
   FinishTile,
   LavaTile,
   RespawnTile,
-  BounceTile
+  BounceTile,
+  EnemyTile
 };

@@ -6,7 +6,8 @@ import {
   FinishTile,
   LavaTile,
   RespawnTile,
-  BounceTile
+  BounceTile,
+  EnemyTile
 } from "./tilemap.js";
 var gameWidth = 30;
 var gameHeight = 10;
@@ -110,6 +111,13 @@ setBounce.onclick = () => {
   selection = 5;
 };
 addBuildItem(setBounce, "bounce");
+const setEnemy = document.createElement("div");
+setEnemy.className = "tileSelection";
+setEnemy.style.backgroundColor = EnemyTile.color;
+setEnemy.onclick = () => {
+  selection = 6;
+};
+addBuildItem(setEnemy, "enemy");
 window.addEventListener("wheel", (ev) => {
   const deltaY = ev.deltaY / 100;
   const speed = 4;
