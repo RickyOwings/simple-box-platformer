@@ -33,9 +33,9 @@ export default class Player {
     this.input = new Input("w", "a", "s", "d");
     this.color = PLAYER_COLOR;
     this.size = PLAYER_SIZE;
-    this.xMusic = new Audio("./assets/music/1.mp3");
-    this.yMusic = new Audio("./assets/music/2.mp3");
-    this.drumMusic = new Audio("./assets/music/3.mp3");
+    this.xMusic = new Audio("./assets/song1/1.mp3");
+    this.yMusic = new Audio("./assets/song1/2.mp3");
+    this.drumMusic = new Audio("./assets/song1/3.mp3");
     this.dieSound = new Audio("./assets/sfx/Die.mp3");
     this.scientistSound = new Audio("./assets/sfx/scientist_death.mp3");
     this.finishLevel = new Audio("./assets/sfx/Finish Level.mp3");
@@ -113,7 +113,20 @@ export default class Player {
   goalLogic() {
     if (Tile.isWithinType(this.x, this.y, this.size, "finish")) {
       this.finishLevel.play();
-      Level.next(this.canvas);
+      Level.next(this.canvas, (url) => {
+        this.xMusic.pause();
+        this.yMusic.pause();
+        this.drumMusic.pause();
+        this.xMusic.currentTime = 0;
+        this.yMusic.currentTime = 0;
+        this.drumMusic.currentTime = 0;
+        this.xMusic.setAttribute("src", `${url}1.mp3`);
+        this.yMusic.setAttribute("src", `${url}2.mp3`);
+        this.drumMusic.setAttribute("src", `${url}3.mp3`);
+        this.xMusic.play();
+        this.yMusic.play();
+        this.drumMusic.play();
+      });
       Enemy.summonEnemies();
       let respawn = RespawnTile.getRespawn();
       if (respawn == null)
@@ -150,7 +163,6 @@ export default class Player {
     if (volHTML) {
       let volume = parseFloat(volHTML.value);
       volume = capNumberToOne(volume);
-      console.log(volume);
       this.volumeStore = volume;
     }
   }
@@ -302,7 +314,7 @@ function capNumberToOne(num) {
   return num;
 }
 const ENEMY_COLOR = "#ffaa00";
-const ENEMY_SIZE = PLAYER_SIZE;
+const ENEMY_SIZE = EnemyTile.size;
 const _Enemy = class {
   constructor(x, y) {
     this.color = ENEMY_COLOR;

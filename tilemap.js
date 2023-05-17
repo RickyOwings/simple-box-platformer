@@ -120,11 +120,11 @@ const _EnemyTile = class extends Tile {
     ctx.fillRect(this.x + offset, this.y + offset, _EnemyTile.size, _EnemyTile.size);
   }
   getX() {
-    let offset = (Tile.size - RespawnTile.size) / 2;
+    let offset = (Tile.size - _EnemyTile.size) / 2;
     return this.x + offset;
   }
   getY() {
-    let offset = (Tile.size - RespawnTile.size) / 2;
+    let offset = (Tile.size - _EnemyTile.size) / 2;
     return this.y + offset;
   }
   remove() {
@@ -132,15 +132,19 @@ const _EnemyTile = class extends Tile {
   }
 };
 let EnemyTile = _EnemyTile;
-EnemyTile.size = 8;
+EnemyTile.size = 12;
 EnemyTile.spawns = [];
-EnemyTile.color = "#660000";
+EnemyTile.color = "#220000";
 const _Level = class {
-  static next(canvas) {
+  static next(canvas, changeSong) {
+    const oldSongDir = _Level.maps[_Level.index].songDir;
     if (_Level.index + 1 >= _Level.maps.length)
       _Level.index = 0;
     else
       _Level.index++;
+    const newSongDir = _Level.maps[_Level.index].songDir;
+    if (oldSongDir != newSongDir)
+      changeSong(newSongDir);
     _Level.remove();
     _Level.generate(canvas);
   }
@@ -189,10 +193,11 @@ const _Level = class {
     }
     Tile.instances = [];
   }
-  constructor({mapArr, style = {}, message = ""}) {
+  constructor({mapArr, style = {}, message = "", songDir = "./assets/song1/"}) {
     this.mapArr = mapArr;
     this.style = style;
     this.message = message;
+    this.songDir = songDir;
     _Level.maps.push(this);
   }
 };
