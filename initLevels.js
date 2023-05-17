@@ -422,5 +422,17 @@ export default function initLevels(canvas) {
     message: "Hint: Don't die",
     songDir: "./assets/song2/"
   });
+  const songDirs = [];
+  for (let i in Level.maps) {
+    const map = Level.maps[i];
+    if (!songDirs.includes(map.songDir))
+      songDirs.push(map.songDir);
+  }
+  for (let i in songDirs) {
+    const dir = songDirs[i];
+    new Audio(`${dir}1.mp3`);
+    new Audio(`${dir}2.mp3`);
+    new Audio(`${dir}3.mp3`);
+  }
   Level.generate(canvas);
 }
