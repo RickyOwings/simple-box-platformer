@@ -1,3 +1,4 @@
+import getSearchParams from "./getSearchParams.js";
 const _Tile = class {
   constructor({tileX, tileY, color = "#aaaaaa"}) {
     this.type = "basic";
@@ -135,7 +136,11 @@ let EnemyTile = _EnemyTile;
 EnemyTile.size = 12;
 EnemyTile.spawns = [];
 EnemyTile.color = "#220000";
+const searchParams = getSearchParams();
 const _Level = class {
+  static getZoom() {
+    return _Level.maps[_Level.index].zoom;
+  }
   static next(canvas, changeSong) {
     const oldSongDir = _Level.maps[_Level.index].songDir;
     if (_Level.index + 1 >= _Level.maps.length)
@@ -148,19 +153,30 @@ const _Level = class {
     _Level.remove();
     _Level.generate(canvas);
   }
+  static updateBuilderAnchor(map) {
+    const builderAnchor = document.getElementById("builderAnchor");
+    builderAnchor.href = `builder.html?customLevel=${JSON.stringify({
+      mapArr: map,
+      zoom: _Level.getZoom()
+    })}`;
+  }
   static generate(canvas) {
     if (!_Level.maps.length)
       return;
+    if (_Level.index >= _Level.maps.length)
+      _Level.index = 0;
     const level = _Level.maps[_Level.index];
     const map = level.mapArr;
     const style = level.style;
+    const zoom = level.zoom;
+    _Level.updateBuilderAnchor(map);
     let height = map.length * 16;
     let width = map[0].length * 16;
     canvas.width = width;
     canvas.height = height;
     let wScale = window.innerWidth / canvas.width;
     let hScale = window.innerHeight / canvas.height;
-    let scale = wScale < hScale ? wScale : hScale;
+    let scale = wScale < hScale ? wScale * zoom : hScale * zoom;
     canvas.style.scale = `${scale * 0.9}`;
     for (let key in _Level.cssDefault) {
       canvas.style[key] = _Level.cssDefault[key];
@@ -193,11 +209,12 @@ const _Level = class {
     }
     Tile.instances = [];
   }
-  constructor({mapArr, style = {}, message = "", songDir = "./assets/song1/"}) {
+  constructor({mapArr, style = {}, message = "", songDir = "./assets/song1/", zoom = 1}) {
     this.mapArr = mapArr;
     this.style = style;
     this.message = message;
     this.songDir = songDir;
+    this.zoom = zoom;
     _Level.maps.push(this);
   }
 };
@@ -207,7 +224,7 @@ Level.cssDefault = {
   filter: "unset"
 };
 Level.maps = [];
-Level.index = 0;
+Level.index = searchParams.level ? searchParams.level - 1 : 0;
 Level.tileDict = {
   0: void 0,
   1: BasicTile,

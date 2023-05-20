@@ -58,6 +58,7 @@ export default class Player {
     Enemy.updateAll(progress);
     if (Enemy.isColliding(this.x, this.y, this.size) && !this.dead)
       this.die(progress);
+    this.checkOutOfBounds(progress);
     this.playerMovement(progress);
     this.lavaLogic(progress);
     this.bounceLogic(progress);
@@ -65,6 +66,7 @@ export default class Player {
     this.physicsUpdate(progress);
     this.mapTileCollision(progress);
     this.adaptiveMusicVolume();
+    this.scrollCanvas();
   }
   physicsUpdate(progress) {
     let progSec = progress / 1e3;
@@ -76,6 +78,32 @@ export default class Player {
     this.y += this.yV * progSec;
     this.xA = 0;
     this.yA = 0;
+  }
+  scrollCanvas() {
+    if (this.dead)
+      return;
+    const zoom = Level.getZoom();
+    if (zoom <= 1) {
+      this.canvas.style.translate = ``;
+      return;
+    }
+    ;
+    const scale = parseFloat(this.canvas.style.scale);
+    const xWindow = Math.floor(this.x + this.size / 2) * scale;
+    const yWindow = Math.floor(this.y + this.size / 2) * scale;
+    const xOffset = this.canvas.width * scale / 2 - xWindow;
+    const yOffset = this.canvas.height * scale / 2 - yWindow;
+    const rotationString = this.canvas.style.rotate ? this.canvas.style.rotate : "0deg";
+    const rotation = parseFloat(rotationString.replace("deg", "")) * Math.PI / 180;
+    const xRotate = xOffset * Math.cos(rotation) - yOffset * Math.sin(rotation);
+    const yRotate = yOffset * Math.cos(rotation) + xOffset * Math.sin(rotation);
+    this.canvas.style.translate = `${xRotate}px ${yRotate}px`;
+  }
+  checkOutOfBounds(progress) {
+    if (this.dead)
+      return;
+    if (this.x < 0 || this.x + this.size > this.canvas.width || this.y < 0 || this.y + this.size > this.canvas.height)
+      this.die(progress);
   }
   playerMovement(progress) {
     if (this.dead)
@@ -177,7 +205,8 @@ export default class Player {
   }
   die(progress) {
     const scale = parseFloat(this.canvas.style.scale);
-    this.canvas.style.scale = `${scale * 0.9}`;
+    if (Level.getZoom() == 1)
+      this.canvas.style.scale = `${scale * 0.9}`;
     const canvasScaleStyle = this.canvas.style.scale;
     this.dead = true;
     this.color = "#333333";

@@ -9,13 +9,29 @@ import {
   BounceTile,
   EnemyTile
 } from "./tilemap.js";
+import getSearchParams from "./getSearchParams.js";
 var gameWidth = 30;
 var gameHeight = 10;
+var gameZoom = 1;
 var zoom = 1;
 var selection = 1;
 var map = [];
 for (let y = 0; y < gameHeight; y++) {
   map.push(new Array(gameWidth).fill(0));
+}
+const getMap = getSearchParams().customLevel;
+if (getMap !== void 0) {
+  const mapArr = getMap.mapArr;
+  const height = mapArr.length;
+  let findWidth = 0;
+  for (let i in mapArr) {
+    if (mapArr[i].length > findWidth)
+      findWidth = mapArr[i].length;
+  }
+  const width = findWidth;
+  gameWidth = width;
+  gameHeight = height;
+  map = mapArr;
 }
 function resizeMapArray() {
   const oldWidth = map[0].length;
@@ -32,12 +48,40 @@ function resizeMapArray() {
   }
   map = newArr;
 }
+function formatSaveFile() {
+  return `// HERE's your level!
+// This is really just meant to be used for developement purposes
+// 
+// There is a function in the file "initLevels.js" that creates all
+// the levels in the game. You would simply just add this to the
+// function to create the level. Since all of the code is made using
+// modules, you can't just copy paste this into the terminal to add a
+// level though. You would probably have to clone the github repository
+// and customize the the "generateNormalLevels" function yourself. The
+// repo can be found on https://github.com/RickyOwings/simple-box-platformer
+
+// There are also several different properties that you can give the level, like
+// css styling and all that!  
+
+new Level({
+    mapArr: ${JSON.stringify(map).replace(/\[\[/g, "[\n                [").replace(/]]/g, "]\n            ]").replace(/],/g, "],\n                ")},
+    message: "This is my cool level!",
+    zoom: ${gameZoom}
+})
+`;
+}
 const builderDiv = document.createElement("div");
 builderDiv.id = "builderItems";
 document.body.appendChild(builderDiv);
 const outputDiv = document.createElement("div");
 outputDiv.id = "outputDiv";
 document.body.appendChild(outputDiv);
+const saveAsTxt = document.createElement("a");
+const saveFile = new Blob([formatSaveFile()], {type: "text/plain-text"});
+saveAsTxt.innerHTML = "Save as TXT (Dev tool)";
+saveAsTxt.href = URL.createObjectURL(saveFile);
+saveAsTxt.download = "map.txt";
+outputDiv.appendChild(saveAsTxt);
 const title = document.createElement("p");
 title.innerHTML = "Build Menu";
 builderDiv.appendChild(title);
@@ -70,6 +114,16 @@ setSize.onclick = () => {
   updateGameSize();
 };
 addBuildItem(setSize);
+const zoomInput = document.createElement("input");
+zoomInput.type = "number";
+zoomInput.value = getMap ? `${getMap.zoom}` : `1`;
+zoomInput.min = "1";
+zoomInput.oninput = () => {
+  gameZoom = parseFloat(zoomInput.value);
+  updateGameSize();
+  formatSaveFile();
+};
+addBuildItem(zoomInput, "zoom");
 const setClear = document.createElement("div");
 setClear.className = "tileSelection";
 setClear.onclick = () => {
@@ -151,14 +205,31 @@ setInterval(() => {
   if (mousePressed) {
     map[mouseY][mouseX] = selection;
     drawTiles();
+    testLevelUrlUpdate();
+    updateGameSize();
   }
 }, 10);
+function testLevelUrlUpdate() {
+  const testAnchor = document.getElementById("testLevel");
+  testAnchor.href = `index.html?customLevel=${JSON.stringify({
+    mapArr: map,
+    zoom: gameZoom
+  })}`;
+}
+testLevelUrlUpdate();
 function updateGameSize() {
   canvas.width = gameWidth;
   canvas.height = gameHeight;
   canvas.style.scale = `${Tile.size * zoom}`;
   resizeMapArray();
   drawTiles();
+  testLevelUrlUpdate();
+  updateSaveFile();
+}
+function updateSaveFile() {
+  formatSaveFile();
+  const file = new Blob([formatSaveFile()], {type: "text/plain-text"});
+  saveAsTxt.href = URL.createObjectURL(file);
 }
 function drawTiles() {
   if (!ctx)
@@ -175,6 +246,5 @@ function drawTiles() {
       ctx.fillRect(x, y, 1, 1);
     }
   }
-  outputDiv.innerHTML = JSON.stringify(map, null, " ").replace("[", "").replace(/],/g, "],<br>").replace(/.$/, "");
 }
 updateGameSize();

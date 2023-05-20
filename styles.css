@@ -61,10 +61,19 @@ body {
 
 #outputDiv {
     z-index: 255;
-    background-color: #ffffff11;
-    font-size: 8px;
+    font-size: 30px;
+    text-align: right;
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: white;
+}
+
+#volumeDiv {
+    z-index: 255;
+    font-size: 14px;
     width: 450px;
-    text-align: left;
+    text-align: right;
     position: absolute;
     top: 0;
     right: 0;

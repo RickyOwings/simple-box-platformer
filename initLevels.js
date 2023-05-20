@@ -1,5 +1,32 @@
 import {Level} from "./tilemap.js";
+import getSearchParams from "./getSearchParams.js";
 export default function initLevels(canvas) {
+  const customMap = getSearchParams().customLevel;
+  if (customMap) {
+    new Level({
+      mapArr: customMap.mapArr,
+      message: "Custom map...",
+      style: customMap?.style,
+      zoom: customMap?.zoom
+    });
+  } else {
+    generateNormalLevels();
+  }
+  const songDirs = [];
+  for (let i in Level.maps) {
+    const map = Level.maps[i];
+    if (!songDirs.includes(map.songDir))
+      songDirs.push(map.songDir);
+  }
+  for (let i in songDirs) {
+    const dir = songDirs[i];
+    new Audio(`${dir}1.mp3`);
+    new Audio(`${dir}2.mp3`);
+    new Audio(`${dir}3.mp3`);
+  }
+  Level.generate(canvas);
+}
+function generateNormalLevels() {
   new Level({
     mapArr: [
       [1, 1, 1, 1, 1, 1, 1],
@@ -117,7 +144,8 @@ export default function initLevels(canvas) {
     style: {
       rotate: "2deg"
     },
-    message: "This one is a bit more tedious..."
+    message: "This one is a bit more tedious...",
+    zoom: 2
   });
   new Level({
     mapArr: [
@@ -143,7 +171,8 @@ export default function initLevels(canvas) {
     style: {
       filter: "sepia(0.5)"
     },
-    message: "You better like wall jumping..."
+    message: "You better like wall jumping...",
+    zoom: 2
   });
   new Level({
     mapArr: [
@@ -357,7 +386,8 @@ export default function initLevels(canvas) {
       [3, 5, 5, 5, 3],
       [3, 5, 5, 5, 3]
     ],
-    message: "Thread the needle baby!"
+    message: "Thread the needle baby!",
+    zoom: 4
   });
   new Level({
     mapArr: [
@@ -379,7 +409,8 @@ export default function initLevels(canvas) {
       [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
     ],
     message: "This looks familiar...",
-    songDir: "./assets/song3/"
+    songDir: "./assets/song3/",
+    zoom: 3
   });
   new Level({
     mapArr: [
@@ -388,13 +419,11 @@ export default function initLevels(canvas) {
       [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 6, 0, 0, 6, 0, 0, 6, 0, 0, 2, 1],
       [1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
       [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-      [1, 6, 0, 0, 6, 0, 0, 6, 0, 0, 6, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1],
-      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-      [1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 6, 0, 0, 6, 0, 0, 6, 1],
+      [1, 6, 0, 0, 6, 0, 0, 6, 0, 0, 6, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1],
       [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     ],
-    message: "They were a little too easy last time..."
+    message: "They were a little too easy last time",
+    zoom: 2
   });
   new Level({
     mapArr: [
@@ -422,17 +451,4 @@ export default function initLevels(canvas) {
     message: "Hint: Don't die",
     songDir: "./assets/song2/"
   });
-  const songDirs = [];
-  for (let i in Level.maps) {
-    const map = Level.maps[i];
-    if (!songDirs.includes(map.songDir))
-      songDirs.push(map.songDir);
-  }
-  for (let i in songDirs) {
-    const dir = songDirs[i];
-    new Audio(`${dir}1.mp3`);
-    new Audio(`${dir}2.mp3`);
-    new Audio(`${dir}3.mp3`);
-  }
-  Level.generate(canvas);
 }
