@@ -2,12 +2,13 @@ import {
   Level,
   Tile,
   RespawnTile,
-  EnemyTile
+  EnemyTile,
+  GunTile
 } from "./tilemap.js";
 import Input from "./input.js";
 const PLAYER_SIZE = 8;
 const PLAYER_COLOR = "#00ff00";
-export default class Player {
+const _Player = class {
   constructor(x, y, canvas) {
     this.dead = false;
     this.xMusicVol = 0.1;
@@ -18,6 +19,7 @@ export default class Player {
     this.finishLevelVol = 0.4;
     this.jumpSoundVol = 0.4;
     this.bounceSoundVol = 0.4;
+    this.shootSoundVol = 0.4;
     this.xV = 0;
     this.yV = 0;
     this.xA = 0;
@@ -26,11 +28,13 @@ export default class Player {
     this.bounce = 8e3;
     this.jumpVel = 200;
     this.wallFactor = 0;
+    this.aimRight = true;
+    this.fireTimer = 0;
     this.volumeStore = 1;
     this.x = x;
     this.y = y;
     this.canvas = canvas;
-    this.input = new Input("w", "a", "s", "d");
+    this.input = new Input("w", "a", "s", "d", " ");
     this.color = PLAYER_COLOR;
     this.size = PLAYER_SIZE;
     this.xMusic = new Audio("./assets/song1/1.mp3");
@@ -41,6 +45,7 @@ export default class Player {
     this.finishLevel = new Audio("./assets/sfx/Finish Level.mp3");
     this.jumpSound = new Audio("./assets/sfx/Jump.mp3");
     this.bounceSound = new Audio("./assets/sfx/bounce.mp3");
+    this.shootSound = new Audio("./assets/sfx/Shoot.mp3");
     this.xMusic.loop = true;
     this.yMusic.loop = true;
     this.drumMusic.loop = true;
@@ -52,16 +57,19 @@ export default class Player {
     Enemy.summonEnemies();
   }
   static fromTilePosition(tileX, tileY, canvas) {
-    return new Player(Math.floor(tileX * Tile.size) + Tile.size / 2 - PLAYER_SIZE / 2, Math.floor(tileY * Tile.size) + Tile.size / 2 - PLAYER_SIZE / 2, canvas);
+    return new _Player(Math.floor(tileX * Tile.size) + Tile.size / 2 - PLAYER_SIZE / 2, Math.floor(tileY * Tile.size) + Tile.size / 2 - PLAYER_SIZE / 2, canvas);
   }
   update(progress) {
     Enemy.updateAll(progress);
+    Bullet.updateAll(progress);
     if (Enemy.isColliding(this.x, this.y, this.size) && !this.dead)
       this.die(progress);
     this.checkOutOfBounds(progress);
     this.playerMovement(progress);
     this.lavaLogic(progress);
     this.bounceLogic(progress);
+    this.gunPickup(progress);
+    this.gunLogic(progress);
     this.goalLogic();
     this.physicsUpdate(progress);
     this.mapTileCollision(progress);
@@ -140,9 +148,44 @@ export default class Player {
       this.bounceSound.play();
     }
   }
+  gunPickup(progress) {
+    if (GunTile.pickedUp)
+      return;
+    if (Tile.isWithinType(this.x, this.y, this.size, "gun")) {
+      console.log("Gun Aquired");
+      GunTile.pickedUp = true;
+    }
+  }
+  gunLogic(progress) {
+    if (!GunTile.pickedUp)
+      return;
+    const d = this.input.pressed("d") ? 1 : 0;
+    const a = this.input.pressed("a") ? 1 : 0;
+    const delta = d - a;
+    if (delta == 1)
+      this.aimRight = true;
+    if (delta == -1)
+      this.aimRight = false;
+    if (this.fireTimer > 0)
+      this.fireTimer -= progress;
+    if (this.input.pressed(" ") && this.fireTimer <= 0) {
+      this.shoot();
+      this.fireTimer = _Player.ROF;
+    }
+  }
+  shoot() {
+    this.shootSound.currentTime = 0;
+    this.shootSound.play();
+    if (this.aimRight) {
+      new Bullet(this.x + this.size, this.y + 2, 1);
+    } else {
+      new Bullet(this.x, this.y + 2, -1);
+    }
+  }
   goalLogic() {
     if (Tile.isWithinType(this.x, this.y, this.size, "finish")) {
       this.finishLevel.play();
+      GunTile.pickedUp = false;
       Level.next(this.canvas, (url) => {
         this.xMusic.pause();
         this.yMusic.pause();
@@ -186,6 +229,7 @@ export default class Player {
     this.scientistSound.volume = this.scientistSoundVol * this.volumeStore;
     this.jumpSound.volume = this.jumpSoundVol * this.volumeStore;
     this.bounceSound.volume = this.bounceSoundVol * this.volumeStore;
+    this.shootSound.volume = this.shootSoundVol * this.volumeStore;
     if (this.dead) {
       this.yMusic.volume = 0;
       this.xMusic.volume = 0;
@@ -234,6 +278,7 @@ export default class Player {
       this.y = 4 + spawn.getY();
       this.restartMusic();
       Enemy.summonEnemies();
+      GunTile.pickedUp = false;
       if (this.canvas.style.scale != canvasScaleStyle)
         return;
       this.canvas.style.scale = `${scale}`;
@@ -331,12 +376,40 @@ export default class Player {
   }
   draw(ctx) {
     Enemy.drawAll(ctx);
+    Bullet.drawAll(ctx);
     ctx.fillStyle = this.color;
     let x = Math.floor(this.x);
     let y = Math.floor(this.y);
     ctx.fillRect(x, y, this.size, this.size);
+    if (GunTile.pickedUp)
+      this.drawGun(ctx);
   }
-}
+  drawGun(ctx) {
+    ctx.fillStyle = "#000000";
+    if (this.aimRight) {
+      this.drawGunRight(ctx);
+    } else {
+      this.drawGunLeft(ctx);
+    }
+  }
+  drawGunRight(ctx) {
+    const x = Math.floor(this.x) + 5;
+    const y = Math.floor(this.y);
+    ctx.fillRect(x - 4, y + 2, 6, 2);
+    ctx.fillRect(x - 4, y + 4, 2, 2);
+    ctx.fillRect(x - 2, y + 4, 1, 1);
+  }
+  drawGunLeft(ctx) {
+    const x = Math.floor(this.x) + 5;
+    const y = Math.floor(this.y);
+    ctx.fillRect(x - 4, y + 2, 6, 2);
+    ctx.fillRect(x, y + 4, 2, 2);
+    ctx.fillRect(x - 1, y + 4, 1, 1);
+  }
+};
+let Player = _Player;
+Player.ROF = 2e3;
+export default Player;
 function capNumberToOne(num) {
   if (!isFinite(num))
     return 0;
@@ -350,15 +423,17 @@ const ENEMY_COLOR = "#ffaa00";
 const ENEMY_SIZE = EnemyTile.size;
 const _Enemy = class {
   constructor(x, y) {
-    this.color = ENEMY_COLOR;
     this.size = ENEMY_SIZE;
-    this.xV = -80;
-    this.yV = 40;
+    this.color = ENEMY_COLOR;
+    this.dead = false;
+    this.yV = 0;
+    this.xV = 60;
     this.x = x;
     this.y = y;
     _Enemy.instances.push(this);
   }
-  static isIntersecting(x, y) {
+  static isIntersecting(x, y, fn = (e) => {
+  }) {
     for (let i in _Enemy.instances) {
       let enemy = _Enemy.instances[i];
       if (x < enemy.x)
@@ -369,9 +444,13 @@ const _Enemy = class {
         continue;
       if (y > enemy.y + enemy.size)
         continue;
+      fn(enemy);
       return true;
     }
     return false;
+  }
+  static removeAll() {
+    _Enemy.instances = [];
   }
   static isColliding(x, y, size) {
     if (_Enemy.isIntersecting(x, y))
@@ -396,32 +475,13 @@ const _Enemy = class {
       _Enemy.instances[i].draw(ctx);
     }
   }
-  static removeAll() {
-    _Enemy.instances = [];
-  }
   static updateAll(progress) {
+    _Enemy.instances = _Enemy.instances.filter((enemy) => {
+      return !enemy.dead;
+    });
     for (let i in _Enemy.instances) {
       _Enemy.instances[i].update(progress);
     }
-  }
-  update(progress) {
-    this.bounce(progress);
-    this.fall(progress);
-  }
-  bounce(progress) {
-    const topLeft = Tile.isIntersecting(this.x, this.y);
-    const topRight = Tile.isIntersecting(this.x + this.size, this.y);
-    if (topLeft || topRight) {
-      this.xV *= -1;
-    }
-    this.x += this.xV * (progress / 1e3);
-  }
-  fall(progress) {
-    const bottomLeft = Tile.isIntersecting(this.x, this.y + this.size);
-    const bottomRight = Tile.isIntersecting(this.x + this.size, this.y + this.size);
-    if (bottomLeft || bottomRight)
-      return;
-    this.y += this.yV * (progress / 1e3);
   }
   draw(ctx) {
     ctx.fillStyle = this.color;
@@ -429,6 +489,149 @@ const _Enemy = class {
     let y = Math.floor(this.y);
     ctx.fillRect(x, y, this.size, this.size);
   }
+  update(progress) {
+    this.yV += 5;
+    this.collision(progress);
+    this.x += this.xV * progress / 1e3;
+    this.y += this.yV * progress / 1e3;
+  }
+  die() {
+    this.dead = true;
+  }
+  collision(progress) {
+    const botLeft = Tile.isIntersecting(this.x, this.y + this.size);
+    const botRight = Tile.isIntersecting(this.x + this.size, this.y + this.size);
+    const topLeft = Tile.isIntersecting(this.x, this.y);
+    const topRight = Tile.isIntersecting(this.x + this.size, this.y);
+    const top = topLeft && topRight;
+    const bot = botLeft && botRight;
+    const left = botLeft && topLeft;
+    const right = botRight && topRight;
+    const botTarget = Math.floor((this.y + this.size) / Tile.size) * Tile.size - this.size;
+    const rightTarget = Math.floor((this.x + this.size) / Tile.size) * Tile.size - this.size;
+    const topTarget = Math.ceil(this.y / Tile.size) * Tile.size;
+    const leftTarget = Math.ceil(this.x / Tile.size) * Tile.size;
+    if (bot) {
+      this.yV = 0;
+      this.y = botTarget;
+    }
+    if (top) {
+      this.yV = 0;
+      this.y = topTarget;
+    }
+    if (right) {
+      this.xV *= -1;
+      this.x = rightTarget;
+    }
+    if (left) {
+      this.xV *= -1;
+      this.x = leftTarget;
+    }
+    if (left || right || top || bot)
+      return;
+    if (botRight) {
+      let dx = this.x + this.size - leftTarget;
+      let dy = this.y + this.size - topTarget;
+      if (dx < dy) {
+        this.xV *= -1;
+        this.x = rightTarget;
+      } else {
+        this.yV = 0;
+        this.y = botTarget;
+      }
+      return;
+    }
+    if (botLeft) {
+      let dx = leftTarget - this.x;
+      let dy = this.y + this.size - topTarget;
+      if (dx < dy) {
+        this.xV *= -1;
+        this.x = leftTarget;
+      } else {
+        this.yV = 0;
+        this.y = botTarget;
+      }
+      return;
+    }
+    if (topRight) {
+      let dx = this.x + this.size - leftTarget;
+      let dy = topTarget - this.y;
+      if (dx < dy) {
+        this.xV *= -1;
+        this.x = rightTarget;
+      } else {
+        this.yV = 0;
+        this.y = topTarget;
+      }
+      return;
+    }
+    if (topLeft) {
+      let dx = leftTarget - this.x;
+      let dy = topTarget - this.y;
+      if (dx < dy) {
+        this.xV *= -1;
+        this.x = leftTarget;
+      } else {
+        this.yV = 0;
+        this.y = topTarget;
+      }
+      return;
+    }
+  }
 };
 let Enemy = _Enemy;
 Enemy.instances = [];
+const _Bullet = class {
+  constructor(x, y, dir) {
+    this.dead = false;
+    this.x = x;
+    this.y = y;
+    this.xV = dir > 0 ? _Bullet.vel : -_Bullet.vel;
+    _Bullet.instances.push(this);
+  }
+  static updateAll(progress) {
+    _Bullet.instances = _Bullet.instances.filter((bullet) => {
+      return !bullet.dead;
+    });
+    for (let i in _Bullet.instances) {
+      _Bullet.instances[i].update(progress);
+    }
+  }
+  static drawAll(ctx) {
+    for (let i in _Bullet.instances) {
+      _Bullet.instances[i].draw(ctx);
+    }
+  }
+  update(progress) {
+    this.x += this.xV * progress / 1e3;
+    this.collide();
+  }
+  collide() {
+    if (Tile.isIntersecting(this.x + _Bullet.size / 2, this.y + _Bullet.size / 2)) {
+      this.die();
+    }
+    if (Enemy.isIntersecting(this.x + _Bullet.size / 2, this.y + _Bullet.size / 2, (enemy) => {
+      enemy.die();
+    })) {
+      this.die();
+    }
+  }
+  die() {
+    const audio = new Audio("./assets/sfx/Bullet Hit.mp3");
+    const volumeSlider = document.getElementById("volume");
+    const volume = parseFloat(volumeSlider.value);
+    audio.volume = _Bullet.soundVol * volume;
+    audio.play();
+    this.dead = true;
+  }
+  draw(ctx) {
+    ctx.fillStyle = _Bullet.color;
+    ctx.fillRect(this.x, this.y, _Bullet.size, _Bullet.size);
+  }
+};
+let Bullet = _Bullet;
+Bullet.instances = [];
+Bullet.vel = 200;
+Bullet.color = "#ff0000";
+Bullet.size = 2;
+Bullet.soundVol = 0.4;

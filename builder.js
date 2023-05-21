@@ -1,13 +1,7 @@
 import {canvas, ctx} from "./createCanvas.js";
 import {
   Level,
-  Tile,
-  BasicTile,
-  FinishTile,
-  LavaTile,
-  RespawnTile,
-  BounceTile,
-  EnemyTile
+  Tile
 } from "./tilemap.js";
 import getSearchParams from "./getSearchParams.js";
 var gameWidth = 30;
@@ -130,48 +124,22 @@ setClear.onclick = () => {
   selection = 0;
 };
 addBuildItem(setClear, "clear");
-const setBasic = document.createElement("div");
-setBasic.className = "tileSelection";
-setBasic.style.backgroundColor = BasicTile.color;
-setBasic.onclick = () => {
-  selection = 1;
-};
-addBuildItem(setBasic, "basic");
-const setFinish = document.createElement("div");
-setFinish.className = "tileSelection";
-setFinish.style.backgroundColor = FinishTile.color;
-setFinish.onclick = () => {
-  selection = 2;
-};
-addBuildItem(setFinish, "finish");
-const setLava = document.createElement("div");
-setLava.className = "tileSelection";
-setLava.style.backgroundColor = LavaTile.color;
-setLava.onclick = () => {
-  selection = 3;
-};
-addBuildItem(setLava, "lava");
-const setRespawn = document.createElement("div");
-setRespawn.className = "tileSelection";
-setRespawn.style.backgroundColor = RespawnTile.color;
-setRespawn.onclick = () => {
-  selection = 4;
-};
-addBuildItem(setRespawn, "respawn");
-const setBounce = document.createElement("div");
-setBounce.className = "tileSelection";
-setBounce.style.backgroundColor = BounceTile.color;
-setBounce.onclick = () => {
-  selection = 5;
-};
-addBuildItem(setBounce, "bounce");
-const setEnemy = document.createElement("div");
-setEnemy.className = "tileSelection";
-setEnemy.style.backgroundColor = EnemyTile.color;
-setEnemy.onclick = () => {
-  selection = 6;
-};
-addBuildItem(setEnemy, "enemy");
+function setTiles() {
+  const length = Object.keys(Level.tileDict).length;
+  for (let i = 1; i < length; i++) {
+    const element = document.createElement("div");
+    const numberToSet = i;
+    const tileClass = Level.tileDict[i];
+    console.log(tileClass);
+    element.className = "tileSelection";
+    element.style.backgroundColor = tileClass.color;
+    element.onclick = () => {
+      selection = numberToSet;
+    };
+    addBuildItem(element, tileClass?.type);
+  }
+}
+setTiles();
 window.addEventListener("wheel", (ev) => {
   const deltaY = ev.deltaY / 100;
   const speed = 4;
@@ -181,13 +149,16 @@ window.addEventListener("wheel", (ev) => {
 var mouseX = 0;
 var mouseY = 0;
 var mousePressed = false;
+var middleMouse = false;
+var panX = 0;
+var panY = 0;
 canvas.addEventListener("mousemove", (ev) => {
   const canvasWidth = canvas.width * zoom * Tile.size;
   const canvasHeight = canvas.height * zoom * Tile.size;
   const xPadding = (window.innerWidth - canvasWidth) / 2;
   const yPadding = (window.innerHeight - canvasHeight) / 2;
-  const x = Math.floor((ev.clientX - xPadding) / (Tile.size * zoom));
-  const y = Math.floor((ev.clientY - yPadding) / (Tile.size * zoom));
+  const x = Math.floor((ev.clientX - xPadding - panX) / (Tile.size * zoom));
+  const y = Math.floor((ev.clientY - yPadding - panY) / (Tile.size * zoom));
   if (x > gameWidth - 1 || x < 0)
     return;
   if (y > gameHeight - 1 || y < 0)
@@ -195,11 +166,30 @@ canvas.addEventListener("mousemove", (ev) => {
   mouseX = x;
   mouseY = y;
 });
-canvas.addEventListener("mousedown", () => {
-  mousePressed = true;
+document.addEventListener("mousemove", (ev) => {
+  const dx = ev.movementX;
+  const dy = ev.movementY;
+  if (middleMouse) {
+    panX += dx;
+    panY += dy;
+    canvas.style.translate = `${panX}px ${panY}px`;
+  }
 });
-canvas.addEventListener("mouseup", () => {
-  mousePressed = false;
+document.addEventListener("mousedown", (ev) => {
+  if (ev.button == 1)
+    middleMouse = true;
+});
+document.addEventListener("mouseup", (ev) => {
+  if (ev.button == 1)
+    middleMouse = false;
+});
+canvas.addEventListener("mousedown", (ev) => {
+  if (ev.button == 0)
+    mousePressed = true;
+});
+canvas.addEventListener("mouseup", (ev) => {
+  if (ev.button == 0)
+    mousePressed = false;
 });
 setInterval(() => {
   if (mousePressed) {

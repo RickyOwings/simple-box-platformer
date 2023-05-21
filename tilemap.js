@@ -1,12 +1,5 @@
 import getSearchParams from "./getSearchParams.js";
 const _Tile = class {
-  constructor({tileX, tileY, color = "#aaaaaa"}) {
-    this.type = "basic";
-    this.x = Math.floor(tileX * _Tile.size);
-    this.y = Math.floor(tileY * _Tile.size);
-    this.color = color;
-    _Tile.instances.push(this);
-  }
   static isIntersecting(x, y, type) {
     if (!type)
       type = "basic";
@@ -30,6 +23,12 @@ const _Tile = class {
     let returnBool = _Tile.isIntersecting(x, y, type) || _Tile.isIntersecting(x + size, y, type) || _Tile.isIntersecting(x + size, y + size, type) || _Tile.isIntersecting(x, y + size, type);
     return returnBool;
   }
+  constructor({tileX, tileY, color = "#aaaaaa"}) {
+    this.x = Math.floor(tileX * _Tile.size);
+    this.y = Math.floor(tileY * _Tile.size);
+    this.color = color;
+    _Tile.instances.push(this);
+  }
   static drawAll(ctx) {
     for (let i in _Tile.instances) {
       _Tile.instances[i].draw(ctx);
@@ -45,6 +44,7 @@ const _Tile = class {
 let Tile = _Tile;
 Tile.instances = [];
 Tile.size = 16;
+Tile.type = "basic";
 const _BasicTile = class extends Tile {
   constructor(x, y) {
     super({tileX: x, tileY: y, color: _BasicTile.color});
@@ -53,6 +53,7 @@ const _BasicTile = class extends Tile {
 };
 let BasicTile = _BasicTile;
 BasicTile.color = "#aaaaaa";
+BasicTile.type = "basic";
 const _FinishTile = class extends Tile {
   constructor(x, y) {
     super({tileX: x, tileY: y, color: _FinishTile.color});
@@ -61,6 +62,7 @@ const _FinishTile = class extends Tile {
 };
 let FinishTile = _FinishTile;
 FinishTile.color = "#ffff00";
+FinishTile.type = "finish";
 const _LavaTile = class extends Tile {
   constructor(x, y) {
     super({tileX: x, tileY: y, color: _LavaTile.color});
@@ -69,6 +71,7 @@ const _LavaTile = class extends Tile {
 };
 let LavaTile = _LavaTile;
 LavaTile.color = "#ff0000";
+LavaTile.type = "lava";
 const _RespawnTile = class extends Tile {
   constructor(x, y) {
     super({tileX: x, tileY: y, color: _RespawnTile.color});
@@ -101,6 +104,7 @@ let RespawnTile = _RespawnTile;
 RespawnTile.size = 8;
 RespawnTile.spawns = [];
 RespawnTile.color = "#0000aa";
+RespawnTile.type = "respawn";
 const _BounceTile = class extends Tile {
   constructor(x, y) {
     super({tileX: x, tileY: y, color: _BounceTile.color});
@@ -108,6 +112,7 @@ const _BounceTile = class extends Tile {
   }
 };
 let BounceTile = _BounceTile;
+BounceTile.type = "bounce";
 BounceTile.color = "#44cc44";
 const _EnemyTile = class extends Tile {
   constructor(x, y) {
@@ -136,6 +141,25 @@ let EnemyTile = _EnemyTile;
 EnemyTile.size = 12;
 EnemyTile.spawns = [];
 EnemyTile.color = "#220000";
+EnemyTile.type = "enemy";
+const _GunTile = class extends Tile {
+  constructor(x, y) {
+    super({tileX: x, tileY: y, color: _GunTile.color});
+    this.type = "gun";
+  }
+  draw(ctx) {
+    if (_GunTile.pickedUp)
+      return;
+    ctx.fillStyle = this.color;
+    ctx.fillRect(this.x + Tile.size / 2 - 4, this.y + Tile.size / 2 + 2, 6, 2);
+    ctx.fillRect(this.x + Tile.size / 2 - 4, this.y + Tile.size / 2 + 4, 2, 2);
+    ctx.fillRect(this.x + Tile.size / 2 - 2, this.y + Tile.size / 2 + 4, 1, 1);
+  }
+};
+let GunTile = _GunTile;
+GunTile.color = "#ffffff";
+GunTile.type = "gun";
+GunTile.pickedUp = false;
 const searchParams = getSearchParams();
 const _Level = class {
   static getZoom() {
@@ -232,7 +256,8 @@ Level.tileDict = {
   3: LavaTile,
   4: RespawnTile,
   5: BounceTile,
-  6: EnemyTile
+  6: EnemyTile,
+  7: GunTile
 };
 export {
   Level,
@@ -242,5 +267,6 @@ export {
   LavaTile,
   RespawnTile,
   BounceTile,
-  EnemyTile
+  EnemyTile,
+  GunTile
 };

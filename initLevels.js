@@ -448,6 +448,7 @@ function generateNormalLevels() {
       [3, 4, 3, 1, 3, 3, 3, 3, 1, 3, 3, 3, 3, 1, 3, 3, 3, 1, 3, 3],
       [3, 1, 3, 1, 3, 3, 3, 3, 1, 3, 3, 3, 3, 1, 3, 3, 3, 1, 3, 3]
     ],
+    zoom: 2,
     message: "Hint: Don't die",
     songDir: "./assets/song2/"
   });
