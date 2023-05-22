@@ -6,6 +6,89 @@ import {
   GunTile
 } from "./tilemap.js";
 import Input from "./input.js";
+function doCollision({
+  self,
+  botLogic = (self2, botTarget, fullCollision) => {
+    self2.yV = 0;
+    self2.y = botTarget;
+  },
+  topLogic = (self2, topTarget, fullCollision) => {
+    self2.yV = 0;
+    self2.y = topTarget;
+  },
+  leftLogic = (self2, leftTarget, fullCollision) => {
+    self2.xV = 0;
+    self2.x = leftTarget;
+  },
+  rightLogic = (self2, rightTarget, fullCollision) => {
+    self2.xV = 0;
+    self2.x = rightTarget;
+  },
+  tileType = "basic"
+}) {
+  const botLeft = Tile.isIntersecting(self.x, self.y + self.size, tileType);
+  const botRight = Tile.isIntersecting(self.x + self.size, self.y + self.size, tileType);
+  const topLeft = Tile.isIntersecting(self.x, self.y, tileType);
+  const topRight = Tile.isIntersecting(self.x + self.size, self.y, tileType);
+  const top = topLeft && topRight;
+  const bot = botLeft && botRight;
+  const left = botLeft && topLeft;
+  const right = botRight && topRight;
+  const botTarget = Math.floor((self.y + self.size) / Tile.size) * Tile.size - self.size;
+  const rightTarget = Math.floor((self.x + self.size) / Tile.size) * Tile.size - self.size;
+  const topTarget = Math.ceil(self.y / Tile.size) * Tile.size;
+  const leftTarget = Math.ceil(self.x / Tile.size) * Tile.size;
+  if (bot)
+    botLogic(self, botTarget, true);
+  if (top)
+    topLogic(self, topTarget, true);
+  if (right)
+    rightLogic(self, rightTarget, true);
+  if (left)
+    leftLogic(self, leftTarget, true);
+  if (left || right || top || bot)
+    return;
+  if (botRight) {
+    let dx = self.x + self.size - leftTarget;
+    let dy = self.y + self.size - topTarget;
+    if (dx < dy) {
+      rightLogic(self, rightTarget, false);
+    } else {
+      botLogic(self, botTarget, false);
+    }
+    return;
+  }
+  if (botLeft) {
+    let dx = leftTarget - self.x;
+    let dy = self.y + self.size - topTarget;
+    if (dx < dy) {
+      leftLogic(self, leftTarget, false);
+    } else {
+      botLogic(self, botTarget, false);
+    }
+    return;
+  }
+  if (topRight) {
+    let dx = self.x + self.size - leftTarget;
+    let dy = topTarget - self.y;
+    if (dx < dy) {
+      rightLogic(self, rightTarget, false);
+    } else {
+      topLogic(self, topTarget, false);
+    }
+    return;
+  }
+  if (topLeft) {
+    let dx = leftTarget - self.x;
+    let dy = topTarget - self.y;
+    if (dx < dy) {
+      leftLogic(self, leftTarget, false);
+    } else {
+      topLogic(self, topTarget, false);
+    }
+    return;
+  }
+}
 const PLAYER_SIZE = 8;
 const PLAYER_COLOR = "#00ff00";
 const _Player = class {
@@ -134,19 +217,49 @@ const _Player = class {
     }
   }
   lavaLogic(progress) {
+    if (Tile.isWithinType(this.x, this.y, this.size, "lava")) {
+      this.xV *= 0.95;
+      this.yV *= 0.95;
+    }
+    ;
     if (this.dead)
       return;
     if (Tile.isWithinType(this.x, this.y, this.size, "lava"))
       this.die(progress);
   }
   bounceLogic(progress) {
-    if (Tile.isWithinType(this.x, this.y, this.size, "bounce")) {
-      this.yV *= -1;
-      this.y -= 1;
-      this.bounceSound.pause();
-      this.bounceSound.currentTime = 0;
-      this.bounceSound.play();
-    }
+    doCollision({
+      self: this,
+      leftLogic: (self, target, full) => {
+        self.x = target;
+        self.xV *= -1;
+        this.bounceSound.pause();
+        this.bounceSound.currentTime = 0;
+        this.bounceSound.play();
+      },
+      rightLogic: (self, target, full) => {
+        self.x = target;
+        self.xV *= -1;
+        this.bounceSound.pause();
+        this.bounceSound.currentTime = 0;
+        this.bounceSound.play();
+      },
+      topLogic: (self, target, full) => {
+        self.y = target;
+        self.yV *= -1;
+        this.bounceSound.pause();
+        this.bounceSound.currentTime = 0;
+        this.bounceSound.play();
+      },
+      botLogic: (self, target, full) => {
+        self.y = target;
+        self.yV *= -1;
+        this.bounceSound.pause();
+        this.bounceSound.currentTime = 0;
+        this.bounceSound.play();
+      },
+      tileType: "bounce"
+    });
   }
   gunPickup(progress) {
     if (GunTile.pickedUp)
@@ -285,94 +398,33 @@ const _Player = class {
     }, progress * 100);
   }
   mapTileCollision(progress) {
-    const botLeft = Tile.isIntersecting(this.x, this.y + this.size);
-    const botRight = Tile.isIntersecting(this.x + this.size, this.y + this.size);
-    const topLeft = Tile.isIntersecting(this.x, this.y);
-    const topRight = Tile.isIntersecting(this.x + this.size, this.y);
-    const top = topLeft && topRight;
-    const bot = botLeft && botRight;
-    const left = botLeft && topLeft;
-    const right = botRight && topRight;
-    const botTarget = Math.floor((this.y + this.size) / Tile.size) * Tile.size - this.size;
-    const rightTarget = Math.floor((this.x + this.size) / Tile.size) * Tile.size - this.size;
-    const topTarget = Math.ceil(this.y / Tile.size) * Tile.size;
-    const leftTarget = Math.ceil(this.x / Tile.size) * Tile.size;
-    if (bot) {
-      this.yV = 0;
-      this.y = botTarget;
-      this.canJump = true;
-      this.wallFactor = 0;
-    }
-    if (top) {
-      this.yV = 0;
-      this.y = topTarget;
-    }
-    if (right) {
-      this.xV = 0;
-      this.x = rightTarget;
-      this.canJump = true;
-      this.wallFactor = -this.bounce;
-    }
-    if (left) {
-      this.xV = 0;
-      this.x = leftTarget;
-      this.canJump = true;
-      this.wallFactor = this.bounce;
-    }
-    if (left || right || top || bot)
-      return;
-    if (botRight) {
-      let dx = this.x + this.size - leftTarget;
-      let dy = this.y + this.size - topTarget;
-      if (dx < dy) {
-        this.xV = 0;
-        this.x = rightTarget;
-      } else {
-        this.yV = 0;
-        this.y = botTarget;
+    doCollision({
+      self: this,
+      botLogic: (self, target, isFull) => {
+        self.yV = 0;
+        self.y = target;
         this.canJump = true;
         this.wallFactor = 0;
+      },
+      leftLogic: (self, target, isFull) => {
+        self.xV = 0;
+        self.x = target;
+        if (isFull) {
+          this.canJump = true;
+          this.wallFactor = this.bounce;
+          this.yV *= 0.99;
+        }
+      },
+      rightLogic: (self, target, isFull) => {
+        self.xV = 0;
+        self.x = target;
+        if (isFull) {
+          this.canJump = true;
+          this.wallFactor = -this.bounce;
+          this.yV *= 0.99;
+        }
       }
-      return;
-    }
-    if (botLeft) {
-      let dx = leftTarget - this.x;
-      let dy = this.y + this.size - topTarget;
-      if (dx < dy) {
-        this.xV = 0;
-        this.x = leftTarget;
-      } else {
-        this.yV = 0;
-        this.y = botTarget;
-        this.canJump = true;
-        this.wallFactor = 0;
-      }
-      return;
-    }
-    if (topRight) {
-      let dx = this.x + this.size - leftTarget;
-      let dy = topTarget - this.y;
-      if (dx < dy) {
-        this.xV = 0;
-        this.x = rightTarget;
-      } else {
-        this.yV = 0;
-        this.y = topTarget;
-      }
-      return;
-    }
-    if (topLeft) {
-      let dx = leftTarget - this.x;
-      let dy = topTarget - this.y;
-      if (dx < dy) {
-        this.xV = 0;
-        this.x = leftTarget;
-      } else {
-        this.yV = 0;
-        this.y = topTarget;
-      }
-      return;
-    }
+    });
   }
   draw(ctx) {
     Enemy.drawAll(ctx);
@@ -499,84 +551,17 @@ const _Enemy = class {
     this.dead = true;
   }
   collision(progress) {
-    const botLeft = Tile.isIntersecting(this.x, this.y + this.size);
-    const botRight = Tile.isIntersecting(this.x + this.size, this.y + this.size);
-    const topLeft = Tile.isIntersecting(this.x, this.y);
-    const topRight = Tile.isIntersecting(this.x + this.size, this.y);
-    const top = topLeft && topRight;
-    const bot = botLeft && botRight;
-    const left = botLeft && topLeft;
-    const right = botRight && topRight;
-    const botTarget = Math.floor((this.y + this.size) / Tile.size) * Tile.size - this.size;
-    const rightTarget = Math.floor((this.x + this.size) / Tile.size) * Tile.size - this.size;
-    const topTarget = Math.ceil(this.y / Tile.size) * Tile.size;
-    const leftTarget = Math.ceil(this.x / Tile.size) * Tile.size;
-    if (bot) {
-      this.yV = 0;
-      this.y = botTarget;
-    }
-    if (top) {
-      this.yV = 0;
-      this.y = topTarget;
-    }
-    if (right) {
-      this.xV *= -1;
-      this.x = rightTarget;
-    }
-    if (left) {
-      this.xV *= -1;
-      this.x = leftTarget;
-    }
-    if (left || right || top || bot)
-      return;
-    if (botRight) {
-      let dx = this.x + this.size - leftTarget;
-      let dy = this.y + this.size - topTarget;
-      if (dx < dy) {
-        this.xV *= -1;
-        this.x = rightTarget;
-      } else {
-        this.yV = 0;
-        this.y = botTarget;
+    doCollision({
+      self: this,
+      leftLogic: (self, target, fullCol) => {
+        self.x = target;
+        self.xV *= -1;
+      },
+      rightLogic: (self, target, fullCol) => {
+        self.x = target;
+        self.xV *= -1;
       }
-      return;
-    }
-    if (botLeft) {
-      let dx = leftTarget - this.x;
-      let dy = this.y + this.size - topTarget;
-      if (dx < dy) {
-        this.xV *= -1;
-        this.x = leftTarget;
-      } else {
-        this.yV = 0;
-        this.y = botTarget;
-      }
-      return;
-    }
-    if (topRight) {
-      let dx = this.x + this.size - leftTarget;
-      let dy = topTarget - this.y;
-      if (dx < dy) {
-        this.xV *= -1;
-        this.x = rightTarget;
-      } else {
-        this.yV = 0;
-        this.y = topTarget;
-      }
-      return;
-    }
-    if (topLeft) {
-      let dx = leftTarget - this.x;
-      let dy = topTarget - this.y;
-      if (dx < dy) {
-        this.xV *= -1;
-        this.x = leftTarget;
-      } else {
-        this.yV = 0;
-        this.y = topTarget;
-      }
-      return;
-    }
+    });
   }
 };
 let Enemy = _Enemy;

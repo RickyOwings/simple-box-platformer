@@ -39,7 +39,9 @@ async function main() {
 }
 function userInput() {
   return new Promise((resolve) => {
-    window.addEventListener("keydown", () => {
+    window.addEventListener("keydown", (ev) => {
+      if (ev.key == "Alt")
+        return;
       resolve();
     });
   });

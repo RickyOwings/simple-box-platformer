@@ -1,5 +1,12 @@
 import getSearchParams from "./getSearchParams.js";
 const _Tile = class {
+  constructor({tileX, tileY, color = "#aaaaaa"}) {
+    this.type = "basic";
+    this.x = Math.floor(tileX * _Tile.size);
+    this.y = Math.floor(tileY * _Tile.size);
+    this.color = color;
+    _Tile.instances.push(this);
+  }
   static isIntersecting(x, y, type) {
     if (!type)
       type = "basic";
@@ -22,12 +29,6 @@ const _Tile = class {
   static isWithinType(x, y, size, type) {
     let returnBool = _Tile.isIntersecting(x, y, type) || _Tile.isIntersecting(x + size, y, type) || _Tile.isIntersecting(x + size, y + size, type) || _Tile.isIntersecting(x, y + size, type);
     return returnBool;
-  }
-  constructor({tileX, tileY, color = "#aaaaaa"}) {
-    this.x = Math.floor(tileX * _Tile.size);
-    this.y = Math.floor(tileY * _Tile.size);
-    this.color = color;
-    _Tile.instances.push(this);
   }
   static drawAll(ctx) {
     for (let i in _Tile.instances) {
