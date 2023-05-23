@@ -120,9 +120,11 @@ const _Player = class {
     this.input = new Input("w", "a", "s", "d", " ");
     this.color = PLAYER_COLOR;
     this.size = PLAYER_SIZE;
-    this.xMusic = new Audio("./assets/song1/1.mp3");
-    this.yMusic = new Audio("./assets/song1/2.mp3");
-    this.drumMusic = new Audio("./assets/song1/3.mp3");
+    const songUrl = Level.getCurrentSongUrl();
+    console.log;
+    this.xMusic = new Audio(`${songUrl}1.mp3`);
+    this.yMusic = new Audio(`${songUrl}2.mp3`);
+    this.drumMusic = new Audio(`${songUrl}3.mp3`);
     this.dieSound = new Audio("./assets/sfx/Die.mp3");
     this.scientistSound = new Audio("./assets/sfx/scientist_death.mp3");
     this.finishLevel = new Audio("./assets/sfx/Finish Level.mp3");
@@ -221,11 +223,28 @@ const _Player = class {
       this.xV *= 0.95;
       this.yV *= 0.95;
     }
-    ;
     if (this.dead)
       return;
-    if (Tile.isWithinType(this.x, this.y, this.size, "lava"))
-      this.die(progress);
+    doCollision({
+      self: this,
+      leftLogic: (self, target, full) => {
+        if (full)
+          this.die(progress);
+      },
+      rightLogic: (self, target, full) => {
+        if (full)
+          this.die(progress);
+      },
+      topLogic: (self, target, full) => {
+        if (full)
+          this.die(progress);
+      },
+      botLogic: (self, target, full) => {
+        if (full)
+          this.die(progress);
+      },
+      tileType: "lava"
+    });
   }
   bounceLogic(progress) {
     doCollision({

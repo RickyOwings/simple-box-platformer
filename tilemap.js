@@ -1,4 +1,5 @@
 import getSearchParams from "./getSearchParams.js";
+import Cookie from "./_snowpack/pkg/js-cookie.js";
 const _Tile = class {
   constructor({tileX, tileY, color = "#aaaaaa"}) {
     this.type = "basic";
@@ -166,6 +167,9 @@ const _Level = class {
   static getZoom() {
     return _Level.maps[_Level.index].zoom;
   }
+  static getCurrentSongUrl() {
+    return _Level.maps[_Level.index].songDir;
+  }
   static next(canvas, changeSong) {
     const oldSongDir = _Level.maps[_Level.index].songDir;
     if (_Level.index + 1 >= _Level.maps.length)
@@ -190,6 +194,7 @@ const _Level = class {
       return;
     if (_Level.index >= _Level.maps.length)
       _Level.index = 0;
+    Cookie.set("level", (_Level.index + 1).toString());
     const level = _Level.maps[_Level.index];
     const map = level.mapArr;
     const style = level.style;
